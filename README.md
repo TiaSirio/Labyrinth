@@ -30,11 +30,11 @@ The controls are explained in a tutorial inside the application.
 
 ## Screenshots 📸
 
-![Screenshot 1](https://github.com/TiaSirio/AssignementsComputerGraphics/blob/master/Screen1.png)
+![Screenshot 1](https://github.com/TiaSirio/Labyrinth/blob/master/Screen1.png)
 
-![Screenshot 2](https://github.com/TiaSirio/AssignementsComputerGraphics/blob/master/Screen2.png)
+![Screenshot 2](https://github.com/TiaSirio/Labyrinth/blob/master/Screen2.png)
 
-![Screenshot 3](https://github.com/TiaSirio/AssignementsComputerGraphics/blob/master/Screen3.png)
+![Screenshot 3](https://github.com/TiaSirio/Labyrinth/blob/master/Screen3.png)
 
 ## Acknowledgements 🤝
 

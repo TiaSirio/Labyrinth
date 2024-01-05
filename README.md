@@ -1,5 +1,7 @@
 # Vulkan Labyrinth 🌀
 
+## Project Overview 🌐
+
 This project is an implementation of a labyrinth using Vulkan. It was created as a way to explore the Vulkan graphics API and to showcase the power of real-time rendering in creating immersive environments.
 
 ## Features 🌟

@@ -1,0 +1,88 @@
+# Doxyfile Configuration
+
+# General Output Settings
+OUTPUT_DIRECTORY            = @CMAKE_CURRENT_BINARY_DIR@/doc_doxygen/
+CREATE_SUBDIRS              = YES
+GENERATE_HTML               = YES
+HTML_DYNAMIC_SECTIONS       = YES
+GENERATE_LATEX              = NO
+GENERATE_MAN                = NO
+GENERATE_XML                = NO
+
+# Project Information
+PROJECT_NAME                = @PROJECT_NAME@
+PROJECT_LOGO                = @CMAKE_CURRENT_SOURCE_DIR@/project_resources/icons/@PROJECT_NAME@.ico
+PROJECT_BRIEF               = "Generated documentation for the @PROJECT_NAME@ project."
+PROJECT_NUMBER              = @PROJECT_VERSION@
+OUTPUT_LANGUAGE             = English
+CASE_SENSE_NAMES            = YES
+
+# Input Configuration
+INPUT                       = @CMAKE_CURRENT_SOURCE_DIR@/src/
+FILE_PATTERNS               = *.hpp *.cpp *.h *.md
+RECURSIVE                   = YES
+EXCLUDE_PATTERNS            = */test/* */third_party/*
+
+# Build Settings
+EXTRACT_ALL                 = YES
+EXTRACT_PRIVATE             = YES
+EXTRACT_STATIC              = YES
+EXTRACT_LOCAL_METHODS       = YES
+EXTRACT_ANON_NSPACES        = YES
+SORT_MEMBER_DOCS            = YES
+SORT_BRIEF_DOCS             = YES
+SORT_GROUP_NAMES            = YES
+SORT_BY_SCOPE_NAME          = YES
+FULL_PATH_NAMES             = NO
+
+# Source Code Browsing
+SOURCE_BROWSER              = YES
+INLINE_SOURCES              = YES
+REFERENCED_BY_RELATION      = YES
+REFERENCES_RELATION         = YES
+VERBATIM_HEADERS            = YES
+
+# Diagrams
+HAVE_DOT                    = YES
+DOT_PATH                    = @GRAPHVIZ_PATH@/bin
+DOT_GRAPH_MAX_NODES         = 75
+CALL_GRAPH                  = YES
+CALLER_GRAPH                = YES
+COLLABORATION_GRAPH         = YES
+GROUP_GRAPHS                = YES
+UML_LOOK                    = YES
+DOT_IMAGE_FORMAT            = svg
+INTERACTIVE_SVG             = YES
+DOT_MULTI_TARGETS           = YES
+
+# Documentation Layout
+GENERATE_TREEVIEW           = YES
+USE_MDFILE_AS_MAINPAGE      = @CMAKE_CURRENT_SOURCE_DIR@/docs_files/README_DOCUMENTATION.md
+SHOW_USED_FILES             = YES
+SHOW_FILES                  = YES
+SHOW_NAMESPACES             = YES
+
+# Warnings and Messages
+WARN_IF_UNDOCUMENTED        = YES
+WARN_NO_PARAMDOC            = YES
+WARN_LOGFILE                = doxygen_warnings.log
+
+# Extensions mapping
+EXTENSION_MAPPING           = .cpp=C++ .hpp=C++ .h=C++
+MARKDOWN_SUPPORT            = YES
+
+# Advanced Configuration
+AUTOLINK_SUPPORT            = YES
+TAB_SIZE                    = 4
+TEMPLATE_RELATIONS          = YES
+GENERATE_PERLMOD            = NO
+SEARCHENGINE                = YES
+ENABLE_PREPROCESSING        = YES
+MACRO_EXPANSION             = YES
+EXPAND_ONLY_PREDEF          = NO
+SKIP_FUNCTION_MACROS        = NO
+
+# Ensure classes and namespaces are correctly recognized
+OPTIMIZE_OUTPUT_JAVA        = NO
+OPTIMIZE_OUTPUT_FOR_C       = NO
+OPTIMIZE_OUTPUT_VHDL        = NO

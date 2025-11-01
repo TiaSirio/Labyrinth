@@ -1,0 +1,49 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+
+# VisualStudio
+.vs
+.vscode
+
+x64
+x86
+Win32
+Debug
+Release
+.env.cmake
+libraries/
+build/
+resources/shaders/compiled/*.spv
+.marker_file.txt
+aqtinstall.log

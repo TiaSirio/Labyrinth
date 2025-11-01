@@ -18,7 +18,7 @@ option(ENABLE_UNITY_BUILD "Enable unity build" OFF)
 option(ENABLE_CACHE_OF_VULKAN_PIPELINE "Enable cache of Vulkan pipeline" OFF)
 option(ENABLE_USE_OF_PROFILING "Enable use of profiling" OFF)
 option(ENABLE_BUILD_DOC "Enable build documentation" ON)
-option(USE_VOLK "Use volk" OFF)
+option(USE_VOLK "Use volk" ON)
 
 # Print all options at the start of the configuration
 message(STATUS "==================== Selected Options ====================")

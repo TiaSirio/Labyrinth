@@ -1,5 +1,11 @@
 // This has been adapted from the Vulkan tutorial
 
+#ifdef USE_VOLK
+#define VK_NO_PROTOTYPES
+#define VOLK_IMPLEMENTATION
+#include <volk.h>
+#endif
+
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
@@ -464,9 +470,19 @@ protected:
 			createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)
 									&debugCreateInfo;
 		// For debugging [Lesson 22] - End
-		
+
+#ifdef USE_VOLK
+        if (volkInitialize() != VK_SUCCESS) {
+			throw std::runtime_error("failed to initialize volk!");
+        }
+#endif
+
 		VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);
 		
+#ifdef USE_VOLK
+        volkLoadInstance(instance);
+#endif
+
 		if(result != VK_SUCCESS) {
 		 	PrintVkError(result);
 			throw std::runtime_error("failed to create instance!");
@@ -731,7 +747,11 @@ protected:
 			createInfo.ppEnabledLayerNames = validationLayers.data();
 		
 		VkResult result = vkCreateDevice(physicalDevice, &createInfo, nullptr, &device);
-		
+
+#ifdef USE_VOLK
+        volkLoadDevice(device);
+#endif
+
 		if (result != VK_SUCCESS) {
 		 	PrintVkError(result);
 			throw std::runtime_error("failed to create logical device!");

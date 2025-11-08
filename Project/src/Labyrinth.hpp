@@ -1,13 +1,22 @@
 // This has been adapted from the Vulkan tutorial
 
-#ifdef USE_VOLK
-#define VK_NO_PROTOTYPES
-#define VOLK_IMPLEMENTATION
-#include <volk.h>
-#endif
+#pragma once
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
+#ifdef USE_VOLK
+	#define VK_NO_PROTOTYPES
+	#include <volk/volk.h>
+
+	#define GLFW_INCLUDE_NONE
+	#include <GLFW/glfw3.h>
+
+	#ifdef _WIN32
+		#define GLFW_EXPOSE_NATIVE_WIN32
+		#include <GLFW/glfw3native.h>
+	#endif
+#else
+	#define GLFW_INCLUDE_VULKAN
+	#include <GLFW/glfw3.h>
+#endif
 
 #include <iostream>
 #include <stdexcept>
@@ -35,8 +44,6 @@
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
-
-// New in Lesson 23 - to load images
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
@@ -152,6 +159,7 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance,
 		func(instance, debugMessenger, pAllocator);
 	}
 }
+
 //// For debugging - Lesson 22.0
 struct errorcode {
 	VkResult resultCode;
@@ -186,6 +194,7 @@ ErrorCodes[ ] = {
 	{ VK_ERROR_INVALID_EXTERNAL_HANDLE, "Invalid External Handle" },
 
 };
+
 void PrintVkError( VkResult result ) {
 	const int numErrorCodes = sizeof( ErrorCodes ) / sizeof( struct errorcode );
 	std::string meaning = "";
@@ -409,7 +418,9 @@ protected:
 	// Lesson 12
     void initVulkan() {
 		createInstance();				// L12
+#ifndef USE_VOLK
 		setupDebugMessenger();			// L22.0
+#endif
 		createSurface();				// L13
 		pickPhysicalDevice();			// L14
 		createLogicalDevice();			// L14
@@ -456,6 +467,7 @@ protected:
 			static_cast<uint32_t>(extensions.size());
 		createInfo.ppEnabledExtensionNames = extensions.data();		
 		
+#ifndef USE_VOLK
 		// For debugging [Lesson 22] - Start
 		if (!checkValidationLayerSupport()) {
 			throw std::runtime_error("validation layers requested, but not available!");
@@ -470,6 +482,7 @@ protected:
 			createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)
 									&debugCreateInfo;
 		// For debugging [Lesson 22] - End
+#endif
 
 #ifdef USE_VOLK
         if (volkInitialize() != VK_SUCCESS) {
@@ -570,12 +583,23 @@ protected:
 	}
 
 	// Lesson 13
-    void createSurface() {
-    	if (glfwCreateWindowSurface(instance, window, nullptr, &surface)
-    			!= VK_SUCCESS) {
-			throw std::runtime_error("failed to create window surface!");
+	void createSurface() {
+#if defined(_WIN32) && defined(USE_VOLK)
+		VkWin32SurfaceCreateInfoKHR createInfo{};
+		createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+		createInfo.hwnd = glfwGetWin32Window(window);
+		createInfo.hinstance = GetModuleHandle(nullptr);
+
+		if (vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface) != VK_SUCCESS) {
+			throw std::runtime_error("failed to create Win32 window surface!");
 		}
-    }
+#else
+		// For other platforms, or if USE_VOLK is not defined, fallback to GLFW
+		if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
+			throw std::runtime_error("Failed to create window surface!");
+		}
+#endif
+	}
 
 	// Lesson 13
     void pickPhysicalDevice() {
@@ -742,9 +766,11 @@ protected:
 				static_cast<uint32_t>(deviceExtensions.size());
 		createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
+#ifndef USE_VOLK
 			createInfo.enabledLayerCount = 
 					static_cast<uint32_t>(validationLayers.size());
 			createInfo.ppEnabledLayerNames = validationLayers.data();
+#endif
 		
 		VkResult result = vkCreateDevice(physicalDevice, &createInfo, nullptr, &device);
 

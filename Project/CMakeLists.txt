@@ -83,14 +83,16 @@ if(USE_ADDITIONAL_COMPILE_OPTIONS)
         # CPU optimization
         add_compile_options(-mfpmath=sse -msse4.2)
         # Linker optimization
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--gc-sections")
+        if (WIN32 AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+            set(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE) # LTO (link-time optimization)
+            set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--gc-sections")
+        endif()
     elseif(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
     endif()
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_options(-O3)
-    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE) # LTO (link-time optimization)
 elseif(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
     add_compile_options(-O2)
 endif()
@@ -122,15 +124,43 @@ endif(USE_COMPILE_OPTIMIZATIONS)
 
 # Volk setup (Vulkan loader library)
 if(USE_VOLK)
-    # Store Volk in project-local libraries folder
-    set(FETCHCONTENT_BASE_DIR ${CMAKE_SOURCE_DIR}/libraries/Volk)
-    include(FetchContent)
-    FetchContent_Declare(
-        volk
-        GIT_REPOSITORY https://github.com/zeux/volk.git
-        GIT_TAG        master
-    )
-    FetchContent_MakeAvailable(volk)
+    # Find Vulkan
+    find_package(Vulkan QUIET)
+
+    if (Vulkan_FOUND)
+        message(STATUS "Vulkan found: ${Vulkan_INCLUDE_DIRS}")
+
+        # Try search Volk
+        find_path(VOLK_INCLUDE_DIR
+            NAMES volk/volk.h
+            HINTS ${Vulkan_INCLUDE_DIRS}
+        )
+
+        if (VOLK_INCLUDE_DIR)
+            message(STATUS "Volk found in Vulkan SDK")
+            add_library(volk_headers INTERFACE)
+            target_include_directories(volk_headers INTERFACE ${VOLK_INCLUDE_DIR})
+        else()
+            message(STATUS "Vulkan not found, using FetchContent")
+            include(FetchContent)
+            FetchContent_Declare(
+                volk
+                GIT_REPOSITORY https://github.com/zeux/volk.git
+                GIT_TAG 1.4.304
+            )
+            FetchContent_MakeAvailable(volk)
+        endif()
+
+    else()
+        message(STATUS "Vulkan not found, using FetchContent")
+        include(FetchContent)
+        FetchContent_Declare(
+            volk
+            GIT_REPOSITORY https://github.com/zeux/volk.git
+            GIT_TAG 1.4.304
+        )
+        FetchContent_MakeAvailable(volk)
+    endif()
 else()
     # Check if Vulkan SDK is installed
     find_package(Vulkan REQUIRED)
@@ -148,7 +178,7 @@ if (DEFINED GLFW_PATH)
     endif()
 else()
     # Fallback: search system-installed GLFW
-    find_package(glfw3 3.3 REQUIRED)
+    find_package(glfw 3.3 REQUIRED)
     set(GLFW_LIB glfw)
     message(STATUS "Found GLFW")
 endif()
@@ -174,10 +204,16 @@ set(RESOURCE_FILE_PATH "${PROJECT_SOURCE_DIR}/project_resources/application_file
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} ${RESOURCE_FILE_PATH})
 
 if(USE_VOLK)
-    # Define a preprocessor macro for C++ code
     target_compile_definitions(${PROJECT_NAME} PRIVATE USE_VOLK)
-endif()
 
+    if(WIN32)
+        target_compile_definitions(${PROJECT_NAME} PRIVATE VK_USE_PLATFORM_WIN32_KHR)
+    elseif(APPLE)
+        target_compile_definitions(${PROJECT_NAME} PRIVATE VK_USE_PLATFORM_METAL_EXT)
+    elseif(UNIX)
+        target_compile_definitions(${PROJECT_NAME} PRIVATE VK_USE_PLATFORM_XLIB_KHR)
+    endif()
+endif()
 if(ENABLE_CACHE_OF_VULKAN_PIPELINE)
     # Enable Vulkan pipeline cache
     target_compile_definitions(${PROJECT_NAME} PRIVATE ENABLE_PIPELINE_CACHE)
@@ -190,7 +226,11 @@ endif()
 
 # Precompiled headers for Vulkan and GLFW
 if(ENABLE_PRECOMPILED_HEADERS)
-    target_precompile_headers(${PROJECT_NAME} PRIVATE <vulkan/vulkan.h> <GLFW/glfw3.h>)
+    if(USE_VOLK)
+        target_precompile_headers(${PROJECT_NAME} PRIVATE <volk/volk.h> <GLFW/glfw3.h>)
+    else()
+        target_precompile_headers(${PROJECT_NAME} PRIVATE <vulkan/vulkan.h> <GLFW/glfw3.h>)
+    endif()
 endif()
 
 # Set C++ standard for the project
@@ -218,6 +258,14 @@ if(ENABLE_UNITY_BUILD)
     set_target_properties(${PROJECT_NAME} PROPERTIES UNITY_BUILD ON)
 endif()
 
+if (USE_VOLK)
+    if (Vulkan_INCLUDE_DIRS)
+        target_include_directories(${PROJECT_NAME} PUBLIC ${Vulkan_INCLUDE_DIRS})
+    else()
+        message(FATAL_ERROR "Vulkan headers non trovati — serve Vulkan SDK installato anche con MinGW")
+    endif()
+endif()
+
 # Include and link directories for different platforms
 if (WIN32)
     message(STATUS "Creating build for Windows")
@@ -225,6 +273,11 @@ if (WIN32)
     if (USE_MINGW)
         target_include_directories(${PROJECT_NAME} PUBLIC ${MINGW_PATH}/include)
         target_link_directories(${PROJECT_NAME} PUBLIC ${MINGW_PATH}/lib)
+
+        if (CMAKE_BUILD_TYPE STREQUAL "Release")
+            # target_link_options(${PROJECT_NAME} PRIVATE -static-libgcc -static-libstdc++)
+            target_link_options(${PROJECT_NAME} PRIVATE -static)
+        endif()
     endif()
 
     target_include_directories(${PROJECT_NAME} PUBLIC
@@ -242,9 +295,9 @@ if (WIN32)
 
     # Link libraries
     if(USE_VOLK)
-        target_link_libraries(${PROJECT_NAME} glfw3 volk_headers)
+        target_link_libraries(${PROJECT_NAME} PRIVATE glfw3 volk_headers)
     else()
-        target_link_libraries(${PROJECT_NAME} glfw3 Vulkan::Vulkan)
+        target_link_libraries(${PROJECT_NAME} PRIVATE glfw3 Vulkan::Vulkan)
     endif()
 
 elseif (UNIX)
@@ -257,13 +310,14 @@ elseif (UNIX)
         ${PROJECT_SOURCE_DIR}/src
         ${TINYOBJLOADER_PATH}
         ${STB_PATH}
+        ${PROJECT_SOURCE_DIR}/headers
     )
 
     # Link libraries
     if(USE_VOLK)
-        target_link_libraries(${PROJECT_NAME} glfw3 volk_headers)
+        target_link_libraries(${PROJECT_NAME} PRIVATE glfw3 volk_headers)
     else()
-        target_link_libraries(${PROJECT_NAME} glfw3 Vulkan::Vulkan)
+        target_link_libraries(${PROJECT_NAME} PRIVATE glfw3 Vulkan::Vulkan)
     endif()
 
 endif()
@@ -337,6 +391,7 @@ add_custom_target(resources ALL
         ${PROJECT_SOURCE_DIR}/resources
         ${CMAKE_BINARY_DIR}/resources
 )
+
 add_dependencies(${PROJECT_NAME} resources)
 
 ################################ INSTALL ################################

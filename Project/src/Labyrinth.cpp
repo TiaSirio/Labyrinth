@@ -1,5 +1,10 @@
 // This has been adapted from the Vulkan tutorial
 
+#ifdef USE_VOLK
+	#define VOLK_IMPLEMENTATION
+	#include <volk/volk.h>
+	#include "Labyrinth.hpp"
+#endif
 
 #include "Labyrinth.hpp"
 
